@@ -1,29 +1,45 @@
-ARG POSTGRES_VERSION
-FROM postgres:${POSTGRES_VERSION}-alpine
-ARG TARGETARCH
+ARG PG_MAJOR=18
 
-ADD src/install.sh install.sh
-RUN sh install.sh && rm install.sh
+FROM debian:bookworm-slim
+ARG PG_MAJOR
 
-ENV POSTGRES_DATABASE=''
-ENV POSTGRES_HOST=''
-ENV POSTGRES_PORT=5432
-ENV POSTGRES_USER=''
-ENV POSTGRES_PASSWORD=''
-ENV PGDUMP_EXTRA_OPTS=''
-ENV CLOUDFLARE_R2_ACCESS_KEY_ID=''
-ENV CLOUDFLARE_R2_SECRET_ACCESS_KEY=''
-ENV CLOUDFLARE_R2_BUCKET=''
-ENV CLOUDFLARE_R2_REGION='auto'
-ENV R2_PREFIX='backups'
-ENV CLOUDFLARE_R2_ENDPOINT=''
-ENV SCHEDULE=''
-ENV PASSPHRASE=''
-ENV BACKUP_KEEP_DAYS=''
+RUN set -eux; \
+	apt-get update; \
+	apt-get install -y --no-install-recommends \
+		wget \
+        ca-certificates \
+        gpg \
+        s3cmd \
+        tar \
+	; \
+    mkdir -p /usr/share/postgresql-common/pgdg; \
+    wget -O /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc \
+        https://www.postgresql.org/media/keys/ACCC4CF8.asc; \
+    . /etc/os-release; \
+    echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt ${VERSION_CODENAME}-pgdg main" \
+        > /etc/apt/sources.list.d/pgdg.list; \
+    apt-get update; \
+    apt-get install -y --no-install-recommends postgresql-client-${PG_MAJOR}; \
+    wget -qO- "https://github.com/ivoronin/go-cron/releases/download/v0.0.5/go-cron_0.0.5_linux_$(dpkg --print-architecture).tar.gz" | tar -xz -C /usr/local/bin; \
+    apt-get autoremove -y; \
+	rm -rf /var/lib/apt/lists/*
 
-ADD src/run.sh run.sh
-ADD src/env.sh env.sh
-ADD src/backup.sh backup.sh
-ADD src/restore.sh restore.sh
+ENV POSTGRES_DATABASE='' \
+    POSTGRES_HOST='' \
+    POSTGRES_PORT=5432 \
+    POSTGRES_USER='' \
+    POSTGRES_PASSWORD='' \
+    PGDUMP_EXTRA_OPTS='' \
+    CLOUDFLARE_R2_ACCESS_KEY_ID='' \
+    CLOUDFLARE_R2_SECRET_ACCESS_KEY='' \
+    CLOUDFLARE_R2_BUCKET='' \
+    CLOUDFLARE_R2_REGION='auto' \
+    R2_PREFIX='backups' \
+    CLOUDFLARE_R2_ENDPOINT='' \
+    SCHEDULE='' \
+    PASSPHRASE='' \
+    BACKUP_KEEP_DAYS=''
 
-ENTRYPOINT ["sh", "run.sh"]
+COPY src/ /
+
+ENTRYPOINT ["bash", "run.sh"]

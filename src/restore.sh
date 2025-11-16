@@ -1,7 +1,6 @@
-#! /bin/sh
+#! /bin/bash
 
 set -u # `-e` omitted intentionally, but i can't remember why exactly :'(
-set -o pipefail
 
 source ./env.sh
 
@@ -27,7 +26,7 @@ if [ $# -eq 1 ]; then
 else
   echo "Finding latest backup..."
   key_suffix=$(
-    aws $aws_args s3 ls "${r2_uri_base}/${POSTGRES_DATABASE}" \
+    s3cmd ls "${r2_uri_base}/${POSTGRES_DATABASE}" \
       | sort \
       | tail -n 1 \
       | awk '{ print $4 }'
@@ -36,7 +35,7 @@ else
 fi
 
 echo "Fetching backup ${full_uri} from Cloudflare R2..."
-aws $aws_args s3 cp "${full_uri}" "db${file_type}"
+s3cmd get "${full_uri}" "db${file_type}"
 
 if [ -n "$PASSPHRASE" ]; then
   echo "Decrypting backup..."

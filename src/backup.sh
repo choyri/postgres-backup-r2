@@ -1,7 +1,6 @@
-#! /bin/sh
+#! /bin/bash
 
 set -eu
-set -o pipefail
 
 source ./env.sh
 
@@ -30,7 +29,7 @@ else
 fi
 
 echo "Uploading backup to $CLOUDFLARE_R2_BUCKET..."
-aws $aws_args s3 cp "$local_file" "$r2_uri"
+s3cmd put "$local_file" "$r2_uri"
 rm "$local_file"
 
 echo "Backup complete."
@@ -41,11 +40,12 @@ if [ -n "$BACKUP_KEEP_DAYS" ]; then
   backups_query="Contents[?LastModified<='${date_from_remove} 00:00:00'].{Key: Key}"
 
   echo "Removing old backups from $CLOUDFLARE_R2_BUCKET..."
-  aws $aws_args s3api list-objects \
-    --bucket "${CLOUDFLARE_R2_BUCKET}" \
-    --prefix "${R2_PREFIX}" \
-    --query "${backups_query}" \
-    --output text \
-    | xargs -n1 -t -I 'KEY' aws $aws_args s3 rm s3://"${CLOUDFLARE_R2_BUCKET}"/'KEY'
+  s3cmd ls s3://${CLOUDFLARE_R2_BUCKET}/${R2_PREFIX}/ \
+    | awk -v cutoff="${date_from_remove} 00:00:00" '
+        {
+          date = $1 " " $2
+          if (date <= cutoff) print $NF
+        }' \
+    | xargs -r s3cmd del
   echo "Removal complete."
 fi
