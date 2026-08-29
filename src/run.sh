@@ -2,8 +2,10 @@
 
 set -eu
 
+cd "$(dirname "$0")"
+
 if [ -z "$SCHEDULE" ]; then
-  bash backup.sh
-else
-  exec go-cron "$SCHEDULE" /bin/bash backup.sh
+  exec bash backup.sh
 fi
+
+exec go-cron "$SCHEDULE" /bin/bash backup.sh

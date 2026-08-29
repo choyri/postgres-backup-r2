@@ -1,7 +1,7 @@
 # Introduction
 
-[![Build Status](https://github.com/dcalsky/postgres-backup-r2/actions/workflows/build-and-push-images.yml/badge.svg?branch=master)](https://github.com/dcalsky/postgres-backup-r2/actions/workflows/build-and-push-images.yml)
-[![Docker Pulls](https://img.shields.io/docker/pulls/dcalsky/postgres-backup-r2)](https://hub.docker.com/r/dcalsky/postgres-backup-r2)
+[![Build Status](https://github.com/choyri/postgres-backup-r2/actions/workflows/build-and-push-images.yml/badge.svg?branch=master)](https://github.com/choyri/postgres-backup-r2/actions/workflows/build-and-push-images.yml)
+[![Docker Pulls](https://img.shields.io/docker/pulls/choyri/postgres-backup-r2)](https://hub.docker.com/r/choyri/postgres-backup-r2)
 
 This project provides Docker images to periodically back up a PostgreSQL database to Cloudflare R2, and to restore from the backup as needed.
 
@@ -12,18 +12,18 @@ This project provides Docker images to periodically back up a PostgreSQL databas
 ```yaml
 services:
   postgres:
-    image: postgres:17-alpine
+    image: postgres:18-alpine
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: password
 
   backup:
-    image: dcalsky/postgres-backup-r2:17
+    image: choyri/postgres-backup-r2:18
+    # image: ghcr.io/choyri/postgres-backup-r2:18
     environment:
       SCHEDULE: '@weekly'     # optional, options: [@yearly, @monthly, @weekly, @daily, @hourly, @every 1h30m10s]
       BACKUP_KEEP_DAYS: 7     # optional, if empty, keep forever
       PASSPHRASE:             # optional
-      CLOUDFLARE_R2_REGION: auto
       CLOUDFLARE_R2_ACCESS_KEY_ID: key
       CLOUDFLARE_R2_SECRET_ACCESS_KEY: secret
       CLOUDFLARE_R2_BUCKET: my-bucket
@@ -35,10 +35,10 @@ services:
       POSTGRES_PASSWORD: password
 ```
 
-- Images are tagged by the major PostgreSQL version supported: `12`, `13`, `14`, `15`, `16`, `17`.
+- Images are tagged by the major PostgreSQL version supported: `14`, `15`, `16`, `17`, `18`.
 - The `SCHEDULE` variable determines backup frequency. See go-cron schedules documentation [here](http://godoc.org/github.com/robfig/cron#hdr-Predefined_schedules). Omit to run the backup immediately and then exit.
 - If `PASSPHRASE` is provided, the backup will be encrypted using GPG.
-- Run `docker exec <container name> sh backup.sh` to trigger a backup ad-hoc.
+- Run `docker exec <container name> bash backup.sh` to trigger a backup ad-hoc.
 - If `BACKUP_KEEP_DAYS` is set, backups older than this many days will be deleted from Cloudflare R2.
 - `CLOUDFLARE_R2_ENDPOINT` should be set to your Cloudflare R2 endpoint URL (<https://ACCOUNT_ID.r2.cloudflarestorage.com>).
 
@@ -75,7 +75,7 @@ More details: <https://developers.cloudflare.com/r2/api/s3/tokens/>
 ### ... from latest backup
 
 ```sh
-docker exec <container name> sh restore.sh
+docker exec <container name> bash restore.sh
 ```
 
 > [!NOTE]
@@ -84,23 +84,23 @@ docker exec <container name> sh restore.sh
 ### ... from specific backup
 
 ```sh
-docker exec <container name> sh restore.sh <timestamp>
+docker exec <container name> bash restore.sh <timestamp>
 ```
 
 ### ... from specific object URI
 
 ```sh
-docker exec <container name> sh restore.sh s3://my-bucket/backups/mydb_20250101.dump
+docker exec <container name> bash restore.sh s3://my-bucket/backups/mydb_20250101.dump
 ```
 
 # Development
 
 ## Build the image locally
 
-`POSTGRES_VERSION` determines Postgres version.
+`PG_MAJOR` determines Postgres version.
 
 ```sh
-DOCKER_BUILDKIT=1 docker build --build-arg POSTGRES_VERSION=17 .
+docker build --build-arg PG_MAJOR=18 .
 ```
 
 ## Run a simple test environment with Docker Compose

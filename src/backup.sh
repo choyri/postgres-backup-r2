@@ -2,6 +2,7 @@
 
 set -eu
 
+cd "$(dirname "$0")"
 source ./env.sh
 
 echo "Creating backup of $POSTGRES_DATABASE database..."
@@ -37,7 +38,6 @@ echo "Backup complete."
 if [ -n "$BACKUP_KEEP_DAYS" ]; then
   sec=$((86400*BACKUP_KEEP_DAYS))
   date_from_remove=$(date -d "@$(($(date +%s) - sec))" +%Y-%m-%d)
-  backups_query="Contents[?LastModified<='${date_from_remove} 00:00:00'].{Key: Key}"
 
   echo "Removing old backups from $CLOUDFLARE_R2_BUCKET..."
   s3cmd ls s3://${CLOUDFLARE_R2_BUCKET}/${R2_PREFIX}/ \

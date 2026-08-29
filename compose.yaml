@@ -3,7 +3,7 @@
 
 services:
   postgres:
-    image: postgres:17-alpine
+    image: postgres:18-alpine
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: password
@@ -12,12 +12,11 @@ services:
     build:
       context: .
       args:
-        POSTGRES_VERSION: '17'
+        PG_MAJOR: '18'
     environment:
       SCHEDULE: '@weekly'     # optional, options: [@yearly, @monthly, @weekly, @daily, @hourly, @every 1h30m10s]
       BACKUP_KEEP_DAYS: 7     # optional, if empty, keep forever
       PASSPHRASE:             # optional
-      CLOUDFLARE_R2_REGION: auto
       CLOUDFLARE_R2_ACCESS_KEY_ID: key
       CLOUDFLARE_R2_SECRET_ACCESS_KEY: secret
       CLOUDFLARE_R2_BUCKET: my-bucket

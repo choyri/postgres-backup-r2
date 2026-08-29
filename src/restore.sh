@@ -1,7 +1,8 @@
 #! /bin/bash
 
-set -u # `-e` omitted intentionally, but i can't remember why exactly :'(
+set -eu
 
+cd "$(dirname "$0")"
 source ./env.sh
 
 r2_uri_base="s3://${CLOUDFLARE_R2_BUCKET}/${R2_PREFIX}"
@@ -46,7 +47,15 @@ fi
 conn_opts="-h $POSTGRES_HOST -p $POSTGRES_PORT -U $POSTGRES_USER -d $POSTGRES_DATABASE"
 
 echo "Restoring from backup..."
-pg_restore $conn_opts --clean --if-exists db.dump
+# pg_restore exits non-zero on non-fatal errors too (e.g. objects `--clean`
+# could not drop), so don't let `set -e` abort here -- just surface the code.
+restore_status=0
+pg_restore $conn_opts --clean --if-exists db.dump || restore_status=$?
 rm db.dump
+
+if [ "$restore_status" -ne 0 ]; then
+  echo "pg_restore exited with status ${restore_status}; check the output above." >&2
+  exit "$restore_status"
+fi
 
 echo "Restore complete."
