@@ -40,12 +40,12 @@ if [ -n "$BACKUP_KEEP_DAYS" ]; then
   date_from_remove=$(date -d "@$(($(date +%s) - sec))" +%Y-%m-%d)
 
   echo "Removing old backups from $CLOUDFLARE_R2_BUCKET..."
-  s3cmd ls s3://${CLOUDFLARE_R2_BUCKET}/${R2_PREFIX}/ \
+  s3cmd ls s3://${CLOUDFLARE_R2_BUCKET}/${R2_PREFIX}/${POSTGRES_DATABASE}_ \
     | awk -v cutoff="${date_from_remove} 00:00:00" '
         {
           date = $1 " " $2
-          if (date <= cutoff) print $NF
+          if (date <= cutoff) print substr($0, index($0, "s3://"))
         }' \
-    | xargs -r s3cmd del
+    | xargs -r -d '\n' s3cmd del
   echo "Removal complete."
 fi
