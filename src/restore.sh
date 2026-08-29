@@ -26,13 +26,20 @@ if [ $# -eq 1 ]; then
   fi
 else
   echo "Finding latest backup..."
-  key_suffix=$(
-    s3cmd ls "${r2_uri_base}/${POSTGRES_DATABASE}" \
+  # `s3cmd ls` prints "<date> <time> <size> <uri>", so the tail of the line is
+  # already a full s3:// URI -- it must not be prefixed with r2_uri_base again.
+  # The trailing underscore keeps `mydb` from matching `mydb2`.
+  full_uri=$(
+    s3cmd ls "${r2_uri_base}/${POSTGRES_DATABASE}_" \
       | sort \
       | tail -n 1 \
-      | awk '{ print $4 }'
+      | awk '{ print substr($0, index($0, "s3://")) }'
   )
-  full_uri="${r2_uri_base}/${key_suffix}"
+
+  if [ -z "$full_uri" ]; then
+    echo "No backup found for ${POSTGRES_DATABASE} under ${r2_uri_base}." >&2
+    exit 1
+  fi
 fi
 
 echo "Fetching backup ${full_uri} from Cloudflare R2..."
