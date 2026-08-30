@@ -45,6 +45,12 @@ RUN set -eux; \
     rm /tmp/go-cron.tar.gz; \
     \
     apt-get purge -y --auto-remove wget; \
+    \
+    # s3cmd hard-depends on python3-magic but only uses it to sniff MIME types,
+    # and env.sh turns that off. Dropping it takes libmagic's 10 MB database
+    # with it; dpkg keeps the dependency recorded as unsatisfied.
+    dpkg --purge --force-depends python3-magic libmagic1t64 libmagic-mgc; \
+    \
     rm -rf /var/lib/apt/lists/*; \
     \
     groupadd --gid 1000 pgbackup; \

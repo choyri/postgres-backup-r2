@@ -40,6 +40,7 @@ if [ ! -f "$HOME/.s3cfg" ]; then
   cat > $HOME/.s3cfg <<EOF
 host_base = ${CLOUDFLARE_R2_ENDPOINT#*://}
 host_bucket =
+use_mime_magic = False
 EOF
 fi
 
